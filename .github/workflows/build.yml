@@ -17,7 +17,9 @@ jobs:
       - run: "mv rootfs.tar.xz grafana-pdc-agent_0.0.19_amd64.tar.gz"
       - name: Release
         uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
           prerelease: true
           generate_release_notes: true
+          fail_on_unmatched_files: true
           files: grafana-pdc-agent_0.0.19_amd64.tar.gz
