@@ -1,5 +1,5 @@
-name: learn-github-actions
-run-name: ${{ github.actor }} is learning GitHub Actions
+name: build-and-publish-lxc
+run-name: Build
 on: [push]
 jobs:
   build-lxc:
@@ -13,3 +13,11 @@ jobs:
         run: sudo apt install debootstrap
         shell: "bash"
       - run: sudo distrobuilder build-lxc debian.yaml
+        shell: "bash"
+      - run: "mv rootfs.tar.xz grafana-pdc-agent_0.0.19_amd64.tar.gz"
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        with:
+          prerelease: true
+          generate_release_notes: true
+          files: grafana-pdc-agent_0.0.19_amd64-pre.tar.gz
