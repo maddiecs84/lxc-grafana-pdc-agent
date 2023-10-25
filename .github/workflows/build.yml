@@ -7,6 +7,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: "Setup distrobuilder"
-        run: snap install distrobuilder --classic
+        run: sudo snap install distrobuilder --classic
+        shell: "bash"
+      - name: "Setup debootstrap"
+        run: sudo apt install debootstrap
         shell: "bash"
       - run: distrobuilder build-lxc debian.yaml
