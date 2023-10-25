@@ -15,11 +15,14 @@ jobs:
       - run: sudo distrobuilder build-lxc debian.yaml
         shell: "bash"
       - run: "mv rootfs.tar.xz grafana-pdc-agent_0.0.19_amd64.tar.gz"
-      - name: Release
-        uses: softprops/action-gh-release@v1
+        # See https://cli.github.com/manual/gh_release_create
+      - name: Create new release
         if: startsWith(github.ref, 'refs/tags/')
-        with:
-          prerelease: true
-          generate_release_notes: true
-          fail_on_unmatched_files: true
-          files: grafana-pdc-agent_0.0.19_amd64.tar.gz
+        run: |
+          gh release create v0.0.1 \
+          --title "v0.0.1" \
+          --generate-notes \
+          --target "${{github.sha}}" \
+          grafana-pdc-agent_0.0.19_amd64.tar.gz
+        env:
+          GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
