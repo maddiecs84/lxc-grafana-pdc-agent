@@ -1,0 +1,236 @@
+image:
+  name: debian-disco-x86_64
+  distribution: debian
+  release: bookworm
+  description: |-
+    Debian {{ image.release }}
+  architecture: x86_64
+
+source:
+  downloader: debootstrap
+  same_as: gutsy
+  url: http://deb.debian.org/debian
+  keyserver: keyserver.ubuntu.com
+  keys:
+  - 0x126C0D24BD8A2942CC7DF8AC7638D0442B90D010
+  - 0xA1BD8E9D78F7FE5C3E65D8AF8B48AD6246925553
+  - 0x6D33866EDD8FFA41C0143AEDDCC9EFBF77E11517
+  - 0x80D15823B7FD1561F9F7BCDDDC30D7C23CBBABEE
+  - 0xF8D2585B8783D481
+
+targets:
+  lxc:
+    create_message: |-
+      You just created an {{ image.description }} container.
+
+      To enable SSH, run: apt install openssh-server
+      No default root or user password are set by LXC.
+    config:
+    - type: all
+      before: 5
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/ubuntu.common.conf
+
+    - type: user
+      before: 5
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/ubuntu.userns.conf
+
+    - type: all
+      after: 4
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/common.conf
+
+    - type: user
+      after: 4
+      content: |-
+        lxc.include = LXC_TEMPLATE_CONFIG/userns.conf
+
+    - type: all
+      content: |-
+        lxc.arch = {{ image.architecture_personality }}
+
+files:
+- path: /etc/hostname
+  generator: hostname
+
+- path: /etc/hosts
+  generator: hosts
+
+- path: /etc/resolvconf/resolv.conf.d/original
+  generator: remove
+
+- path: /etc/resolvconf/resolv.conf.d/tail
+  generator: remove
+
+- path: /etc/machine-id
+  generator: dump
+
+- path: /etc/user/profile
+  generator: copy
+  source: /etc/profile
+
+- path: /var/lib/dbus/machine-id
+  generator: remove
+
+- name: meta-data
+  generator: cloud-init
+  variants:
+  - cloud
+
+- name: network-config
+  generator: cloud-init
+  variants:
+  - cloud
+
+- name: user-data
+  generator: cloud-init
+  variants:
+  - cloud
+
+- name: vendor-data
+  generator: cloud-init
+  variants:
+  - cloud
+
+- path: /etc/systemd/system/grafana-pdc.service.template
+  generator: dump
+  content: |-
+    [Unit]
+    Description=Grafana Private Datasource Connect
+    After=network-online.target
+
+    [Service]
+    Type=simple
+    ExecStart=/etc/grafana/pdc -token ${TOKEN} -cluster ${CLUSTER} -gcloud-hosted-grafana-id ${GRAFANA_ID}
+    SyslogIdentifier=grafana_pdc
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+
+- path: /etc/grafana/configure-pdc.sh
+  generator: dump
+  content: |-
+    #!/bin/bash
+
+    export TOKEN=
+    export CLUSTER=prod-gb-south-0
+    export GRAFANA_ID=
+
+    whiptail --title "Barman" --msgbox "Configure Grafana PDC" 11 58
+
+    TOKEN=$(whiptail --inputbox "Token?" 11 58 "" --title "Grafana PDC Token" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus != 0 ]; then
+        clear
+        exit 1
+    fi
+
+    CLUSTER=$(whiptail --inputbox "Cluster?" 11 58 "${CLUSTER}" --title "Grafana Cluster" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus != 0 ]; then
+        clear
+        exit 1
+    fi
+
+    GRAFANA_ID=$(whiptail --inputbox "Grafana ID?" 11 58 "" --title "GCloud hosted Grafana ID" 3>&1 1>&2 2>&3)
+    exitstatus=$?
+    if [ $exitstatus != 0 ]; then
+        clear
+        exit 1
+    fi
+
+    clear
+
+    cat /etc/systemd/system/grafana-pdc.service.template | envsubst > /etc/systemd/system/grafana-pdc.service
+    systemctl daemon-reload
+    systemctl restart grafana-pdc.service
+
+packages:
+  manager: apt
+  update: true
+  cleanup: true
+  sets:
+  - packages:
+    - openssh-client
+    - gettext-base
+    action: install
+
+  - packages:
+    - cloud-init
+    action: install
+    variants:
+    - cloud
+
+  repositories:
+  - name: sources.list
+    url: |-
+      deb http://deb.debian.org/debian {{ image.release }} main
+      deb http://security.debian.org/debian-security {{ image.release }}-security/updates main
+    architectures:
+    - amd64
+    - i386
+
+actions:
+- trigger: post-unpack
+  action: |-
+    #!/bin/sh
+    apt install wget ca-certificates -y
+    install -d /usr/share/grafana
+    wget -O /usr/share/grafana/pdc-agent.tar.gz https://github.com/grafana/pdc-agent/releases/download/v0.0.19/pdc-agent_Linux_x86_64.tar.gz
+  architectures:
+    - amd64
+    - i386
+
+- trigger: post-unpack
+  action: |-
+    #!/bin/sh
+    apt install wget ca-certificates -y
+    install -d /usr/share/grafana
+    wget -O /usr/share/grafana/pdc-agent.tar.gz https://github.com/grafana/pdc-agent/releases/download/v0.0.19/pdc-agent_Linux_arm64.tar.gz
+  architectures:
+    - arm64
+
+- trigger: post-packages
+  action: |-
+    #!/bin/sh
+    set -eux
+
+    # Enable systemd-networkd
+    systemctl enable systemd-networkd
+  releases:
+  - bookworm
+
+- trigger: post-packages
+  action: |-
+    #!/bin/sh
+    set -eux
+
+    mkdir -p /etc/grafana/pdc
+    tar -xvzf /usr/share/grafana/pdc-agent.tar.gz -C /etc/grafana/pdc --strip-components 1
+  releases:
+  - bookworm
+
+- trigger: post-packages
+  action: |-
+    #!/bin/sh
+    set -eux
+
+    # Cleanup underlying /run
+    mount -o bind / /mnt
+    rm -rf /mnt/run/*
+    umount /mnt
+
+    # Cleanup temporary shadow paths
+    rm /etc/*-
+
+- trigger: post-files
+  action: |-
+    #!/bin/sh
+    set -eux
+
+    chmod +x /etc/grafana/configure-pdc.sh
+
+mappings:
+  architecture_map: debian
