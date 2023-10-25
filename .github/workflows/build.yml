@@ -2,7 +2,7 @@ name: learn-github-actions
 run-name: ${{ github.actor }} is learning GitHub Actions
 on: [push]
 jobs:
-  check-bats-version:
+  build-lxc:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -12,4 +12,4 @@ jobs:
       - name: "Setup debootstrap"
         run: sudo apt install debootstrap
         shell: "bash"
-      - run: distrobuilder build-lxc debian.yaml
+      - run: sudo distrobuilder build-lxc debian.yaml
