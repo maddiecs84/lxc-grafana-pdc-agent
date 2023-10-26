@@ -1,10 +1,8 @@
 image:
-  name: debian-disco-x86_64
   distribution: debian
   release: bookworm
   description: |-
-    Debian {{ image.release }}
-  architecture: x86_64
+    Debian {{ image.release }} {{ image.architecture }}
 
 source:
   downloader: debootstrap
@@ -169,8 +167,10 @@ packages:
       deb http://deb.debian.org/debian {{ image.release }} main
       deb http://security.debian.org/debian-security {{ image.release }}-security/updates main
     architectures:
-    - amd64
     - i386
+    - x86_64
+    - amd64
+    - arm64
 
 actions:
 - trigger: post-unpack
@@ -180,7 +180,16 @@ actions:
     install -d /usr/share/grafana
     wget -O /usr/share/grafana/pdc-agent.tar.gz https://github.com/grafana/pdc-agent/releases/download/v0.0.19/pdc-agent_Linux_x86_64.tar.gz
   architectures:
+    - x86_64
     - amd64
+
+- trigger: post-unpack
+  action: |-
+    #!/bin/sh
+    apt install wget ca-certificates -y
+    install -d /usr/share/grafana
+    wget -O /usr/share/grafana/pdc-agent.tar.gz https://github.com/grafana/pdc-agent/releases/download/v0.0.19/pdc-agent_Linux_i386.tar.gz
+  architectures:
     - i386
 
 - trigger: post-unpack

@@ -12,10 +12,12 @@ jobs:
       - name: "Setup debootstrap"
         run: sudo apt install debootstrap
         shell: "bash"
-      - run: sudo distrobuilder build-lxc debian.yaml
+      - run: sudo distrobuilder build-lxc debian.yaml -o image.architecture=amd64
         shell: "bash"
       - run: "mv rootfs.tar.xz grafana-pdc-agent_0.0.19_amd64.tar.gz"
-        # See https://cli.github.com/manual/gh_release_create
+      - run: sudo distrobuilder build-lxc debian.yaml -o image.architecture=i386
+        shell: "bash"
+      - run: "mv rootfs.tar.xz grafana-pdc-agent_0.0.19_i386.tar.gz"
       - name: Create new release
         if: startsWith(github.ref, 'refs/tags/')
         run: |
@@ -23,7 +25,8 @@ jobs:
           --title "v0.0.1" \
           --generate-notes \
           --target "${{github.sha}}" \
-          grafana-pdc-agent_0.0.19_amd64.tar.gz
+          grafana-pdc-agent_0.0.19_arm86_64.tar.gz \
+          grafana-pdc-agent_0.0.19_i386.tar.gz
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
     permissions:

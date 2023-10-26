@@ -1,6 +1,0 @@
-image:
-  distribution: debian
-source:
-  downloader: debootstrap
-packages:
-  manager: apt
