@@ -1,1 +1,1 @@
-sudo distrobuilder build-lxc ubuntu.yaml
+sudo distrobuilder build-lxc debian.yaml --compression gzip
