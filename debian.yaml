@@ -227,8 +227,9 @@ actions:
     #!/bin/sh
     set -eux
 
-    mkdir -p /etc/grafana/pdc
-    tar -xvzf /usr/share/grafana/pdc-agent.tar.gz -C /etc/grafana/pdc --strip-components 1
+    mkdir -p /etc/grafana
+    tar -xvzf /usr/share/grafana/pdc-agent.tar.gz -C /etc/grafana --strip-components 1
+    rm /usr/share/grafana/pdc-agent.tar.gz
   releases:
   - bookworm
 
