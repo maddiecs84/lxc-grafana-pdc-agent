@@ -25,7 +25,7 @@ jobs:
           --title "v0.0.1" \
           --generate-notes \
           --target "${{github.sha}}" \
-          grafana-pdc-agent_0.0.19_arm86_64.tar.gz \
+          grafana-pdc-agent_0.0.19_amd64.tar.gz \
           grafana-pdc-agent_0.0.19_i386.tar.gz
         env:
           GH_TOKEN: "${{ secrets.GITHUB_TOKEN }}"
