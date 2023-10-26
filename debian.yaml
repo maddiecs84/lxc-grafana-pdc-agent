@@ -112,34 +112,45 @@ files:
   content: |-
     #!/bin/bash
 
+    TOKEN_ARG=$1
+    CLUSTER_ARG=$2
+    GRAFANA_ID_ARG=$3
+
     export TOKEN=
     export CLUSTER=prod-gb-south-0
     export GRAFANA_ID=
 
-    whiptail --title "Barman" --msgbox "Configure Grafana PDC" 11 58
+    if [ -z "$TOKEN_ARG" ] || [ -z "$CLUSTER_ARG" ] || [ -z "$GRAFANA_ID_ARG" ]
+    then
+          whiptail --title "Barman" --msgbox "Configure Grafana PDC" 11 58
 
-    TOKEN=$(whiptail --inputbox "Token?" 11 58 "" --title "Grafana PDC Token" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus != 0 ]; then
-        clear
-        exit 1
+          TOKEN=$(whiptail --inputbox "Token?" 11 58 "" --title "Grafana PDC Token" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus != 0 ]; then
+              clear
+              exit 1
+          fi
+
+          CLUSTER=$(whiptail --inputbox "Cluster?" 11 58 "${CLUSTER}" --title "Grafana Cluster" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus != 0 ]; then
+              clear
+              exit 1
+          fi
+
+          GRAFANA_ID=$(whiptail --inputbox "Grafana ID?" 11 58 "" --title "GCloud hosted Grafana ID" 3>&1 1>&2 2>&3)
+          exitstatus=$?
+          if [ $exitstatus != 0 ]; then
+              clear
+              exit 1
+          fi
+
+          clear
+    else
+          TOKEN=$TOKEN_ARG
+          CLUSTER=$CLUSTER_ARG
+          GRAFANA_ID=$GRAFANA_ID_ARG
     fi
-
-    CLUSTER=$(whiptail --inputbox "Cluster?" 11 58 "${CLUSTER}" --title "Grafana Cluster" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus != 0 ]; then
-        clear
-        exit 1
-    fi
-
-    GRAFANA_ID=$(whiptail --inputbox "Grafana ID?" 11 58 "" --title "GCloud hosted Grafana ID" 3>&1 1>&2 2>&3)
-    exitstatus=$?
-    if [ $exitstatus != 0 ]; then
-        clear
-        exit 1
-    fi
-
-    clear
 
     cat /etc/systemd/system/grafana-pdc.service.template | envsubst > /etc/systemd/system/grafana-pdc.service
     systemctl daemon-reload
